@@ -295,13 +295,13 @@
                                     <Label fx:id="salary_position" layoutX="90.0" layoutY="175.0" prefHeight="19.0" prefWidth="112.0" styleClass="label-info" stylesheets="@dashboardDesign.css" />
                                     <Button fx:id="salary_cearBtn" layoutX="21.0" layoutY="420.0" mnemonicParsing="false" onAction="#salaryReset" prefHeight="38.0" prefWidth="72.0" styleClass="clear-btn" stylesheets="@dashboardDesign.css" text="Clear" />
                                     <Button fx:id="salary_updateBtn" layoutX="120.0" layoutY="420.0" mnemonicParsing="false" onAction="#salaryUpdate" prefHeight="38.0" prefWidth="72.0" styleClass="update-btn" stylesheets="@dashboardDesign.css" text="Update" />
-                                    <TextField fx:id="salary_salary2" layoutX="93.0" layoutY="268.0" prefHeight="25.0" prefWidth="126.0" styleClass="textfield" stylesheets="@dashboardDesign.css" />
                                     <Label layoutX="12.0" layoutY="272.0" text="Salary Final" />
                                     <TextField fx:id="salary_bank" layoutX="93.0" layoutY="360.0" prefHeight="25.0" prefWidth="126.0" styleClass="textfield" stylesheets="@dashboardDesign.css" />
                                     <TextField fx:id="salary_acc" layoutX="92.0" layoutY="314.0" prefHeight="25.0" prefWidth="126.0" styleClass="textfield" stylesheets="@dashboardDesign.css" />
                                     <Label layoutY="318.0" text="Acc Payment" />
                                     <Label layoutX="21.0" layoutY="364.0" text="Bank" />
                                     <Label fx:id="salary_employeeID" layoutX="102.0" layoutY="33.0" prefHeight="19.0" prefWidth="87.0" styleClass="label-info" stylesheets="@dashboardDesign.css" />
+                                    <Label fx:id="salary_salary2" layoutX="92.0" layoutY="267.0" prefHeight="26.0" prefWidth="127.0" styleClass="label-info" stylesheets="@dashboardDesign.css" />
                                  </children>
                               </AnchorPane>
                               <AnchorPane layoutX="232.0" layoutY="9.0" prefHeight="538.0" prefWidth="662.0" stylesheets="@dashboardDesign.css">

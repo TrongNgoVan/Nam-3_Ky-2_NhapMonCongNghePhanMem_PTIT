@@ -5,19 +5,28 @@
  */
 package manage.employee.system;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
+
 import java.io.File;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -178,7 +187,7 @@ public class dashboardController implements Initializable {
     private TextField salary_salary1;
     
     @FXML
-    private TextField salary_salary2;
+    private Label salary_salary2;
     
     @FXML
     private TextField salary_acc;
@@ -382,89 +391,104 @@ public class dashboardController implements Initializable {
 
     }
 
-    public void addEmployeeAdd() {
+public void addEmployeeAdd() {
 
-        Date date = new Date();
-        java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+    Date date = new Date();
+    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
 
-        String sql = "INSERT INTO employee "
-                + "(employee_id,firstName,lastName,gender,phoneNum,position,image,date,wday1,wday2,wday3,wday4,salary1,salary2,acc,bank) "
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    String sql = "INSERT INTO employee "
+            + "(employee_id,firstName,lastName,gender,phoneNum,position,image,date,wday1,wday2,wday3,wday4,salary1,salary2,acc,bank) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-        connect = database.connectDb();
+    connect = database.connectDb();
 
-        try {
-            Alert alert;
-            if (addEmployee_employeeID.getText().isEmpty()
-                    || addEmployee_firstName.getText().isEmpty()
-                    || addEmployee_lastName.getText().isEmpty()
-                    || addEmployee_gender.getSelectionModel().getSelectedItem() == null
-                    || addEmployee_phoneNum.getText().isEmpty()
-                    || addEmployee_position.getSelectionModel().getSelectedItem() == null
-                    || getData.path == null || getData.path == "") {
+    try {
+        Alert alert;
+        if (addEmployee_employeeID.getText().isEmpty()
+                || addEmployee_firstName.getText().isEmpty()
+                || addEmployee_lastName.getText().isEmpty()
+                || addEmployee_gender.getSelectionModel().getSelectedItem() == null
+                || addEmployee_phoneNum.getText().isEmpty()
+                || addEmployee_position.getSelectionModel().getSelectedItem() == null
+                || getData.path == null || getData.path.isEmpty()) {
+            alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Please fill all blank fields");
+            alert.showAndWait();
+        } else {
+            // Check phone number format
+            String phoneNum = addEmployee_phoneNum.getText();
+            if (!isValidPhoneNumber(phoneNum)) {
                 alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Error Message");
                 alert.setHeaderText(null);
-                alert.setContentText("Please fill all blank fields");
+                alert.setContentText("Invalid phone number format");
                 alert.showAndWait();
-            } else {
-
-                String check = "SELECT employee_id FROM employee WHERE employee_id = '"
-                        + addEmployee_employeeID.getText() + "'";
-
-                statement = connect.createStatement();
-                result = statement.executeQuery(check);
-
-                if (result.next()) {
-                    alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Error Message");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Employee ID: " + addEmployee_employeeID.getText() + " was already exist!");
-                    alert.showAndWait();
-                } else {
-
-                    prepare = connect.prepareStatement(sql);
-                    prepare.setString(1, addEmployee_employeeID.getText());
-                    prepare.setString(2, addEmployee_firstName.getText());
-                    prepare.setString(3, addEmployee_lastName.getText());
-                    prepare.setString(4, (String) addEmployee_gender.getSelectionModel().getSelectedItem());
-                    prepare.setString(5, addEmployee_phoneNum.getText());
-                    prepare.setString(6, (String) addEmployee_position.getSelectionModel().getSelectedItem());
-
-                    String uri = getData.path;
-                    uri = uri.replace("\\", "\\\\");
-
-                    prepare.setString(7, uri);
-                    prepare.setString(8, String.valueOf(sqlDate));
-                    prepare.setInt(9, 0);
-                    prepare.setInt(10, 0);
-                    prepare.setInt(11, 0);
-                    prepare.setInt(12, 0);
-                    prepare.setDouble(13, 0.0);
-                    prepare.setDouble(14, 0.0);
-                    prepare.setString(15, "Chưa nhập");
-                    prepare.setString(16, "Chưa nhập");
-                    prepare.executeUpdate();
-                    
-                    alert = new Alert(AlertType.INFORMATION);
-                    alert.setTitle("Information Message");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Successfully Added!");
-                    alert.showAndWait();
-                    
-                    addEmployeeShowListData();
-                    addEmployeeReset();
-                    
-                    
-                    
-                }
+                return;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            String check = "SELECT employee_id FROM employee WHERE employee_id = '"
+                    + addEmployee_employeeID.getText() + "'";
+
+            statement = connect.createStatement();
+            result = statement.executeQuery(check);
+
+            if (result.next()) {
+                alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Error Message");
+                alert.setHeaderText(null);
+                alert.setContentText("Employee ID: " + addEmployee_employeeID.getText() + " already exists!");
+                alert.showAndWait();
+            } else {
+                prepare = connect.prepareStatement(sql);
+                prepare.setString(1, addEmployee_employeeID.getText());
+                prepare.setString(2, addEmployee_firstName.getText());
+                prepare.setString(3, addEmployee_lastName.getText());
+                prepare.setString(4, (String) addEmployee_gender.getSelectionModel().getSelectedItem());
+                prepare.setString(5, phoneNum);
+                prepare.setString(6, (String) addEmployee_position.getSelectionModel().getSelectedItem());
+
+                String uri = getData.path;
+                uri = uri.replace("\\", "\\\\");
+
+                prepare.setString(7, uri);
+                prepare.setString(8, String.valueOf(sqlDate));
+                prepare.setInt(9, 0);
+                prepare.setInt(10, 0);
+                prepare.setInt(11, 0);
+                prepare.setInt(12, 0);
+                prepare.setDouble(13, 0.0);
+                prepare.setDouble(14, 0.0);
+                prepare.setString(15, "Chưa nhập");
+                prepare.setString(16, "Chưa nhập");
+                prepare.executeUpdate();
+
+                alert = new Alert(AlertType.INFORMATION);
+                alert.setTitle("Information Message");
+                alert.setHeaderText(null);
+                alert.setContentText("Successfully Added!");
+                alert.showAndWait();
+
+                addEmployeeShowListData();
+                addEmployeeReset();
+            }
         }
 
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
+
+private boolean isValidPhoneNumber(String phoneNum) {
+    // Define a regular expression pattern for a valid phone number
+    // Here we assume a valid phone number is 10 digits long
+    String regex = "\\d{10}";
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(phoneNum);
+    return matcher.matches();
+}
+
 
     public void addEmployeeUpdate() {
 
@@ -499,6 +523,16 @@ public class dashboardController implements Initializable {
                 alert.setHeaderText(null);
                 alert.setContentText("Please fill all blank fields");
                 alert.showAndWait();
+            }else {
+            // Check phone number format
+            String phoneNum = addEmployee_phoneNum.getText();
+            if (!isValidPhoneNumber(phoneNum)) {
+                alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Error Message");
+                alert.setHeaderText(null);
+                alert.setContentText("Invalid phone number format");
+                alert.showAndWait();
+                return;
             } else {
                 alert = new Alert(AlertType.CONFIRMATION);
                 alert.setTitle("Cofirmation Message");
@@ -512,36 +546,25 @@ public class dashboardController implements Initializable {
 
                     double salary = 0;
 
-                    String checkData = "SELECT * FROM employee_info WHERE employee_id = '"
+                    String checkData = "SELECT * FROM employee WHERE employee_id = '"
                             + addEmployee_employeeID.getText() + "'";
 
                     prepare = connect.prepareStatement(checkData);
                     result = prepare.executeQuery();
 
-                    while (result.next()) {
-                        salary = result.getDouble("salary");
-                    }
-
-                    String updateInfo = "UPDATE employee_info SET firstName = '"
-                            + addEmployee_firstName.getText() + "', lastName = '"
-                            + addEmployee_lastName.getText() + "', position = '"
-                            + addEmployee_position.getSelectionModel().getSelectedItem()
-                            + "' WHERE employee_id = '"
-                            + addEmployee_employeeID.getText() + "'";
-
-                    prepare = connect.prepareStatement(updateInfo);
-                    prepare.executeUpdate();
-
+                    
+                  
                     alert = new Alert(AlertType.INFORMATION);
                     alert.setTitle("Information Message");
                     alert.setHeaderText(null);
-                    alert.setContentText("Successfully Updated!");
+                    alert.setContentText("Update thành công!!!!");
                     alert.showAndWait();
 
                     addEmployeeShowListData();
                     addEmployeeReset();
                 }
 
+            }
             }
 
         } catch (Exception e) {
@@ -580,15 +603,7 @@ public class dashboardController implements Initializable {
                 Optional<ButtonType> option = alert.showAndWait();
 
                 if (option.get().equals(ButtonType.OK)) {
-                    statement = connect.createStatement();
-                    statement.executeUpdate(sql);
-
-                    String deleteInfo = "DELETE FROM employee_info WHERE employee_id = '"
-                            + addEmployee_employeeID.getText() + "'";
-
-                    prepare = connect.prepareStatement(deleteInfo);
-                    prepare.executeUpdate();
-
+               
                     alert = new Alert(AlertType.INFORMATION);
                     alert.setTitle("Information Message");
                     alert.setHeaderText(null);
@@ -775,45 +790,75 @@ public class dashboardController implements Initializable {
         addEmployee_image.setImage(image);
     }
 
-    public void salaryUpdate() {
+ 
+ public void salaryUpdate() {
+    String sql = "UPDATE employee SET salary1 = ?, salary2 = ?, acc = ?, bank = ? WHERE employee_id = ?";
+    connect = database.connectDb();
 
-        String sql = "UPDATE employee SET salary1 = '" + salary_salary1.getText()
-                 + "', salary2 = '" + salary_salary2.getText() 
-                + "', acc = '" + salary_acc.getText()
-                + "', bank = '" + salary_bank.getText()
-                + "' WHERE employee_id = '" + salary_employeeID.getText() + "'";
+    try {
+        Alert alert;
 
-        connect = database.connectDb();
+        if (salary_employeeID.getText().isEmpty()
+                || salary_firstName.getText().isEmpty()
+                || salary_lastName.getText().isEmpty()
+                || salary_position.getText().isEmpty()
+                || salary_salary1.getText().isEmpty()
+                || salary_salary2.getText().isEmpty()
+                || salary_acc.getText().isEmpty()
+                || salary_bank.getText().isEmpty()) {
+            
+            alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Vui lòng điền đầy đủ thông tin!!!");
+            alert.showAndWait();
+            
+        } else {
+            double salary1 = 0;
+            double salary2 = 0;
 
-        try {
-            Alert alert;
+            try {
+                salary1 = Double.parseDouble(salary_salary1.getText());
 
-            if (salary_employeeID.getText().isEmpty()
-                    || salary_firstName.getText().isEmpty()
-                    || salary_lastName.getText().isEmpty()
-                    || salary_position.getText().isEmpty()) {
+                if (salary1 <= 0) {
+                    throw new NumberFormatException("Lương đầu vào phải là một số nguyên dương");
+                }
+            } catch (NumberFormatException e) {
                 alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Error Message");
                 alert.setHeaderText(null);
-                alert.setContentText("Please select item first");
+                alert.setContentText("Lương đầu vào phải là một số nguyên dương");
                 alert.showAndWait();
-            } else {
-                statement = connect.createStatement();
-                statement.executeUpdate(sql);
-
-                alert = new Alert(AlertType.INFORMATION);
-                alert.setTitle("Information Message");
-                alert.setHeaderText(null);
-                alert.setContentText("Successfully Updated!");
-                alert.showAndWait();
-
-                salaryShowListData();
+                return;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            
+
+            // Set parameters for the prepared statement
+            PreparedStatement preparedStatement = connect.prepareStatement(sql);
+            preparedStatement.setDouble(1, salary1);
+            preparedStatement.setDouble(2, salary2);
+            preparedStatement.setString(3, salary_acc.getText());
+            preparedStatement.setString(4, salary_bank.getText());
+            preparedStatement.setString(5, salary_employeeID.getText());
+
+            preparedStatement.executeUpdate();
+
+            alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Update thành công!!!!");
+            alert.showAndWait();
+
+            salaryShowListData();
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
+
+
 
     public void salaryReset() {
         salary_employeeID.setText("");
@@ -869,14 +914,24 @@ public class dashboardController implements Initializable {
     private ObservableList<employeeData> salaryList;
 
     public void salaryShowListData() {
+       
+
         salaryList = salaryListData();
 
         salary_col_employeeID.setCellValueFactory(new PropertyValueFactory<>("employeeId"));
         salary_col_firstName.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         salary_col_lastName.setCellValueFactory(new PropertyValueFactory<>("lastName"));
         salary_col_position.setCellValueFactory(new PropertyValueFactory<>("position"));
-        salary_col_salary1.setCellValueFactory(new PropertyValueFactory<>("salary1"));
-        salary_col_salary2.setCellValueFactory(new PropertyValueFactory<>("salary2"));
+       salary_col_salary1.setCellValueFactory(cellData -> {
+        Double salary1 = cellData.getValue().getSalary1();
+        return new SimpleStringProperty(String.format("%.2f", salary1));
+    });
+
+    salary_col_salary2.setCellValueFactory(cellData -> {
+        Double salary2 = cellData.getValue().getSalary2();
+        return new SimpleStringProperty(String.format("%.2f", salary2));
+    });
+   
         salary_col_acc.setCellValueFactory(new PropertyValueFactory<>("acc"));
         salary_col_bank.setCellValueFactory(new PropertyValueFactory<>("bank"));
         salary_tableView.setItems(salaryList);
@@ -884,64 +939,105 @@ public class dashboardController implements Initializable {
     }
 
     public void salarySelect() {
+    employeeData employeeD = salary_tableView.getSelectionModel().getSelectedItem();
+    int num = salary_tableView.getSelectionModel().getSelectedIndex();
 
-        employeeData employeeD = salary_tableView.getSelectionModel().getSelectedItem();
-        int num = salary_tableView.getSelectionModel().getSelectedIndex();
-
-        if ((num - 1) < -1) {
-            return;
-        }
-
-        salary_employeeID.setText(String.valueOf(employeeD.getEmployeeId()));
-        salary_firstName.setText(employeeD.getFirstName());
-        salary_lastName.setText(employeeD.getLastName());
-        salary_position.setText(employeeD.getPosition());
-        salary_salary1.setText(String.valueOf(employeeD.getSalary1()));
-        salary_salary2.setText(String.valueOf(employeeD.getSalary2()));
-        salary_acc.setText(String.valueOf(employeeD.getAcc()));
-        salary_bank.setText(String.valueOf(employeeD.getBank()));
-
+    if ((num - 1) < -1) {
+        return;
     }
-    public void wdayUpdate() {
 
-        String sql = "UPDATE employee SET wday1 = '"
-                + wday_wday1.getText() + "', wday2 = '"
-                + wday_wday2.getText() + "', wday3 = '"
-                + wday_wday3.getText() + "', wday4 = '"
-                + wday_wday4.getText() + "' WHERE employee_id ='"
-                + wday_employeeID.getText() + "'";
+    salary_employeeID.setText(String.valueOf(employeeD.getEmployeeId()));
+    salary_firstName.setText(employeeD.getFirstName());
+    salary_lastName.setText(employeeD.getLastName());
+    salary_position.setText(employeeD.getPosition());
 
-        connect = database.connectDb();
+    // Format salary to two decimal places
+    String formattedSalary1 = String.format("%.2f", employeeD.getSalary1());
+    String formattedSalary2 = String.format("%.2f", employeeD.getSalary2());
 
-        try {
-            Alert alert;
+    salary_salary1.setText(formattedSalary1);
+    salary_salary2.setText(formattedSalary2);
+    salary_acc.setText(employeeD.getAcc());
+    salary_bank.setText(employeeD.getBank());
+}
 
-            if (wday_employeeID.getText().isEmpty()
-                    || wday_firstName.getText().isEmpty()
-                    || wday_lastName.getText().isEmpty()
-                    || wday_position.getText().isEmpty()) {
+ public void wdayUpdate() {
+    String sql = "UPDATE employee SET wday1 = '"
+            + wday_wday1.getText() + "', wday2 = '"
+            + wday_wday2.getText() + "', wday3 = '"
+            + wday_wday3.getText() + "', wday4 = '"
+            + wday_wday4.getText() + "' WHERE employee_id ='"
+            + wday_employeeID.getText() + "'";
+
+    connect = database.connectDb();
+
+    try {
+        Alert alert;
+
+        if (wday_employeeID.getText().isEmpty()
+                || wday_firstName.getText().isEmpty()
+                || wday_lastName.getText().isEmpty()
+                || wday_position.getText().isEmpty()
+                || wday_wday1.getText().isEmpty()
+                || wday_wday2.getText().isEmpty()
+                || wday_wday3.getText().isEmpty()
+                || wday_wday4.getText().isEmpty()) {
+
+            alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Vui lòng điền đầy đủ thông tin!!!");
+            alert.showAndWait();
+
+        } else {
+            int wday1 = 0, wday2 = 0, wday3 = 0, wday4 = 0;
+
+            try {
+                wday1 = Integer.parseInt(wday_wday1.getText());
+                wday2 = Integer.parseInt(wday_wday2.getText());
+                wday3 = Integer.parseInt(wday_wday3.getText());
+                wday4 = Integer.parseInt(wday_wday4.getText());
+
+                if (wday1 < 0 || wday2 < 0 || wday3 < 0 || wday4 < 0) {
+                    throw new NumberFormatException("Ngày làm việc phải là số nguyên không âm!");
+                }
+
+                int totalDays = wday1 + wday2 + wday3 + wday4;
+
+                if (totalDays > 31) {
+                    alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Error Message");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Tổng số ngày trên 1 tháng không được vượt quá 31!");
+                    alert.showAndWait();
+                    return;
+                }
+            } catch (NumberFormatException e) {
                 alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Error Message");
                 alert.setHeaderText(null);
-                alert.setContentText("Please select item first");
+                alert.setContentText("Ngày làm việc phải là số nguyên không âm!");
                 alert.showAndWait();
-            } else {
-                statement = connect.createStatement();
-                statement.executeUpdate(sql);
-
-                alert = new Alert(AlertType.INFORMATION);
-                alert.setTitle("Information Message");
-                alert.setHeaderText(null);
-                alert.setContentText("Successfully Updated!");
-                alert.showAndWait();
-
-                wdayShowListData();
+                return;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            statement = connect.createStatement();
+            statement.executeUpdate(sql);
+
+            alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Information Message");
+            alert.setHeaderText(null);
+            alert.setContentText("Update thành công!!!!");
+            alert.showAndWait();
+
+            wdayShowListData();
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
+
     public void wdayReset() {
         wday_employeeID.setText("");
         wday_firstName.setText("");

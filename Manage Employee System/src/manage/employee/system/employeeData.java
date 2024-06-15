@@ -86,18 +86,23 @@ public class employeeData {
     public Integer getWday3(){
         return wday3;
     }
-    public Double getSalary1(){
-        return salary1;
-    }
-  
-    public Double getSalary2(){
-        int s = wday1+wday2+wday3+wday4;
-        if(s==0) return 0.0;
-        else{
-        salary2 = salary1*( wday1+wday2*1.2+wday3*2)/s;
+   public Double getSalary1() {
+    // Format salary1 to two decimal places
+    return salary1;
+}
+
+public Double getSalary2() {
+    int s = wday1 + wday2 + wday3 + wday4;
+    if (s == 0) return 0.0;
+    else {
+        salary2 = salary1 * (wday1 + wday2 * 1.2 + wday3 * 2) / 31;
+        // Format salary2 to two decimal places
         return salary2;
-        }
     }
+}
+
+// Helper method to format double to two decimal places
+
     
      public String getAcc(){
         return acc;
